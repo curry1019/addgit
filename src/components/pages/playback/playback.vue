@@ -6,8 +6,8 @@
                 <div class="search_box">
                     <div class="search_title">会议回放</div>
                     <div class="input_box">
-                        <el-input placeholder="查询会议" size="small" v-model="name" class="input-with-select">
-                            <el-button slot="append" icon="el-icon-search"></el-button>
+                        <el-input placeholder="查询会议" size="small" v-model="name" clearable class="input-with-select">
+                            <el-button @click="handleSearch" slot="append" icon="el-icon-search"></el-button>
                         </el-input>
                     </div>
                 </div>
@@ -24,15 +24,13 @@
                             </el-table-column>
                             <el-table-column type="index" label="序号" width="55" align="center">
                             </el-table-column>
-                            <el-table-column prop="name" label="会议名称" min-width="180" align="center">
+                            <el-table-column prop="conferenceName" label="会议名称" min-width="180" align="center">
                             </el-table-column>
-                            <el-table-column prop="time" label="会议时长" min-width="100" align="center">
+                            <el-table-column prop="length" label="会议时长" min-width="100" align="center">
                             </el-table-column>
                             <el-table-column prop="beginTime" label="会议起始时间"  min-width="150" align="center">
                             </el-table-column>
                             <el-table-column prop="endTime" label="会议结束时间"  min-width="150" align="center">
-                            </el-table-column>
-                            <el-table-column prop="status" label="状态" min-width="100" align="center">
                             </el-table-column>
                             <el-table-column min-width="200" fixed="right" label="操作" align="center">
                                 <template slot-scope="scope">
@@ -66,7 +64,7 @@
     import pagination from '@/components/common/Pagination/Pagination.vue'
     import Header from '@/components/common/header/header'
     import Base from '@/base/base.vue'
-    import {listVideoInfo} from '@/axios/service/playback'
+    import API from '@/axios/service/playback'
 	export default Base.extend({
     data() {
         return {
@@ -74,36 +72,7 @@
             page: 1, //当前页码
             pageSize: 10,
             name: "", // 会议名称
-            rows:[
-                {
-                    name:"明辉",
-                    time:"2:30'50",
-                    beginTime:"2019-07-20 10:00",
-                    endTime:"2019-07-20 12:00",
-                    status:"视频回放",
-                },
-                {
-                    name:"明辉",
-                    time:"2:30'50",
-                    beginTime:"2019-07-20 10:00",
-                    endTime:"2019-07-20 12:00",
-                    status:"视频回放",
-                },
-                {
-                    name:"明辉",
-                    time:"2:30'50",
-                    beginTime:"2019-07-20 10:00",
-                    endTime:"2019-07-20 12:00",
-                    status:"视频回放",
-                },
-                {
-                    name:"明辉",
-                    time:"2:30'50",
-                    beginTime:"2019-07-20 10:00",
-                    endTime:"2019-07-20 12:00",
-                    status:"视频回放",
-                }
-            ],
+            rows:[],
             multipleSelection: [], // 表格选中的列
             isPlaying: false, // 是否显示播放页面
             playingTitle: '博大经开建筑施工设计稿图修改意见会议', // 视频回放标题
@@ -137,10 +106,15 @@
                 pageSize: that.pageSize,
                 data:{name: that.name}
             }
-            listVideoInfo(params).then((res)=>{
-                console.log(res)
+            API.listVideoInfo(params).then((res)=>{
+                if(res.code == 0) {
+                    var result = res.data
+                    that.total = result.total
+                    that.rows = result.records
+                }else {
+                    
+                }
             }).catch((err)=>{
-                console.log(err);
                 this.$message.error(err);
             });
         },
@@ -149,14 +123,33 @@
             var that = this;
             this.$prompt("请输入会议名称", "编辑", {
                     confirmButtonText: "确定",
-                    inputValue: row.name,
-                    cancelButtonText: "取消"
+                    inputValue: row.conferenceName,
+                    cancelButtonText: "取消",
+                    closeOnClickModal: false
                 })
                 .then(({
                     value
                 }) => {
                     if(value.trim()) {
                         console.log(value)
+                        var params = {
+                            id: row.id,
+                            data:{name: value}
+                        }
+                        API.editVideoInfo(params).then((res)=>{
+                            if(res.code == 0) {
+                                that.$message.success({
+									showClose: true,
+									message: "修改成功",
+									duration: 2000
+								});
+								that.search()
+                            }else {
+
+                            }
+                        }).catch((err)=>{
+                            this.$message.error(err);
+                        });
                     } else {
                         that.$message.error({
                             showClose: true,
@@ -169,12 +162,12 @@
         },
         // 播放
         playing(row) {
-            this.playingTitle = row.name
+            this.playingTitle = row.conferenceName
             var options = {
-				rtmp: "rtmp://play.smart-zone.51yuqian.net/live/19459_e7561d56458b4d039acdba6a0bdde4ad?txSecret=da25ff99acb60a8529ad3a810d4b1140&txTime=5D42A6A1",
-				flv: "http://play.smart-zone.51yuqian.net/live/19459_e7561d56458b4d039acdba6a0bdde4ad.flv?txSecret=da25ff99acb60a8529ad3a810d4b1140&txTime=5D42A6A1",
-				m3u8: "http://play.smart-zone.51yuqian.net/live/19459_e7561d56458b4d039acdba6a0bdde4ad.m3u8?txSecret=da25ff99acb60a8529ad3a810d4b1140&txTime=5D42A6A1",
-				mp4: "http://1255808274.vod2.myqcloud.com/3ffc276cvodcq1255808274/004933095285890791836280111/f0.mp4",
+				rtmp: "",
+				flv: "",
+				m3u8: "",
+				mp4: row.videoUrl,
 				autoplay: true,
 				live: false,
 				// poster : "http://www.test.com/myimage.jpg",
@@ -201,20 +194,55 @@
         remove(row) {
             var that = this
             this.$confirm("确认删除这条会议记录吗?", "提示", {
-                confirmButtonClass: "el-button--warning"
+                confirmButtonClass: "el-button--warning",
+                closeOnClickModal: false
             }).then(() => {
-                
+                var params = []
+                params[0] = row.id
+                API.removeVideoInfo(params).then((res)=>{
+                    if(res.code == 0) {
+                        that.$message.success({
+                            showClose: true,
+                            message: "删除成功",
+                            duration: 2000
+                        });
+                        that.search()
+                    }else {
+
+                    }
+                }).catch((err)=>{
+                    this.$message.error(err);
+                });
             }).catch(() => {});
         },
         // 批量删除
         batchDelete() {
-            if(this.multipleSelection.length == 0) {
+            var that = this
+            if(that.multipleSelection.length == 0) {
                 return
             }
-            this.$confirm("确认删除选中的会议记录吗?", "提示", {
-                confirmButtonClass: "el-button--warning"
+            that.$confirm("确认删除选中的会议记录吗?", "提示", {
+                confirmButtonClass: "el-button--warning",
+                closeOnClickModal: false
             }).then(() => {
-                console.log(this.multipleSelection)
+                var params = []
+                that.multipleSelection.forEach(item => {
+                    params.push(item.id)
+                })
+                API.removeVideoInfo(params).then((res)=>{
+                    if(res.code == 0) {
+                        that.$message.success({
+                            showClose: true,
+                            message: "批量删除成功",
+                            duration: 2000
+                        });
+                        that.search()
+                    }else {
+
+                    }
+                }).catch((err)=>{
+                    that.$message.error(err);
+                });
             }).catch(() => {});
         },
         // 表格选中逻辑

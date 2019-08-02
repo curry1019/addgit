@@ -11,7 +11,7 @@ import {errorMsg} from '@/axios/base/utils';
 const baseUrl = (function () {
 	switch (process.env.NODE_ENV != 'production' ? 'development' : 'production') {// 代理线上数据or生产
 		case 'development':
-			return 'http://192.168.199.183:8899/';
+			return 'http://192.168.199.152:8666/';
 		case 'production':
 			return 'api/';
 		default:

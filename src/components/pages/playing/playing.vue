@@ -29,10 +29,11 @@
 <script>
 	import Header from '@/components/common/header/header'
 	import Base from '@/base/base.vue'
+	import {playConfig} from '@/axios/service/playing'
 	export default Base.extend({
     data() {
         return {
-            isStart: true, // 判断当前是否有视频会议
+            isStart: false, // 判断当前是否有视频会议
         }
 	},
 	 components: {
@@ -40,34 +41,48 @@
     },
     methods: {
         startPlay() {
-			var width, height;
-			width = document.querySelector('.content_box').clientWidth
-			height = document.querySelector('.content_box').clientHeight - 61
-			var options = {
-				rtmp: "",
-				flv: "",
-				m3u8: "",
-				mp4: "http://1255808274.vod2.myqcloud.com/3ffc276cvodcq1255808274/004933095285890791836280111/f0.mp4",
-				autoplay: true,
-				live: false,
-				// poster : "http://www.test.com/myimage.jpg",
-				width: width,
-				height: height,
-				volume: 0.5,
-				flash: true,
-				flashUrl: "",
-				x5_player: false,
-				h5_flv: false,
-				controls: 'system',
-				wording: {
-					2032: '请求视频失败，请检查网络',
-					2048: '请求m3u8文件失败，可能是网络错误或者跨域问题'
-				},
-				listener: function(msg) {
+			var that = this
+			playConfig().then((res)=>{
+				if(res.code == 0) {
+					var result = res.data
+					if(result.liveStatus == 1) {
+						that.isStart = true
+						var width, height;
+						width = document.querySelector('.content_box').clientWidth
+						height = document.querySelector('.content_box').clientHeight - 61
+						var options = {
+							rtmp: result.rtmp,
+							flv: result.flv,
+							m3u8: result.m3u8,
+							mp4: "",
+							autoplay: true,
+							live: false,
+							// poster : "http://www.test.com/myimage.jpg",
+							width: width,
+							height: height,
+							volume: 0.5,
+							flash: true,
+							flashUrl: "",
+							x5_player: false,
+							h5_flv: false,
+							controls: 'system',
+							wording: {
+								2032: '请求视频失败，请检查网络',
+								2048: '请求m3u8文件失败，可能是网络错误或者跨域问题'
+							},
+							listener: function(msg) {
 
+							}
+						};
+						window.tcplayer = new TcPlayer('video-container', options);
+					}else {
+						that.isStart = false
+					}
 				}
-			};
-			window.tcplayer = new TcPlayer('video-container', options);
+            }).catch((err)=>{
+                this.$message.error(err);
+            });
+			
 		}
     },
     mounted() {
